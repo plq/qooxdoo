@@ -115,7 +115,6 @@ qx.Class.define("simulator.qxwebdriver.Util", {
       iFaces.forEach(function(iFace, i) {
         if (interactions[iFace]) {
           for (var method in interactions[iFace]) {
-            //console.log("adding method", method, "interface", iFace);
             if (typeof element[method] !== "undefined") {
               console.log("Warning: Overriding existing interaction '" + method +
                 '" with implementation for "' + iFace + '"');

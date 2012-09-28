@@ -18,97 +18,16 @@
 ************************************************************************ */
 
 /* ************************************************************************
-#ignore(simulator.webdriver)
-#ignore(simulator.webdriver.*)
+#ignore(require)
 ************************************************************************ */
 
 /**
- * A WebDriver client with support for qx.Desktop applications.
- *
- * The most important interface for test authors is {@link #findWidget}, which
- * is called with a Locator parameter just like WebDriver.findElement and also
- * returns a webdriver.WebElement.
- * If the locator finds a DOM element that is part of a qooxdoo widget, special
- * methods called 'interactions' will be added to the returned WebElement.
- *
+ * Loads the WebDriverJs module and exposes it as simulator.webdriver
+ * @lint ignoreUndefined(require)
  */
-qx.Class.define("simulator.qxwebdriver.WebDriver",
-{
-  extend : simulator.webdriver.WebDriver,
-
-  /**
-   * @param session {webdriver.Session|webdriver.promise.Promise} Either a
-   * known session or a promise that will be resolved to a session.
-   * @param executor {webdriver.CommandExecutor} The executor to use when
-   * sending commands to the browser.
-   */
-  construct : function(session, executor)
-  {
-    simulator.webdriver.WebDriver.call(this, session, executor);
-  },
+qx.Class.define("simulator.qxwebdriver.WebDriver", {
 
   statics :
-  {
-    /** Default timeout value for {@link #waitForQxApplication} */
-    AUT_LOAD_TIMEOUT : 10000,
-
-    /**
-     * Creates a new WebDriver client for an existing session.
-     * @param executor {webdriver.CommandExecutor} Command executor to use when
-     * querying for session details.
-     * @param sessionId {String} ID of the session to attach to.
-     * @return {simulator.qxwebdriver.WebDriver} A new client for the specified session.
-     */
-    attachToSession : function(executor, sessionId) {
-      return simulator.qxwebdriver.WebDriver.acquireSession_(executor,
-        new simulator.webdriver.Command(simulator.webdriver.CommandName.DESCRIBE_SESSION)
-        .setParameter('sessionId', sessionId),
-          'WebDriver.attachToSession()');
-    },
-
-    /**
-     * Creates a new WebDriver session.
-     * @param executor {webdriver.CommandExecutor} The executor to create the new
-     * session with.
-     * @param desiredCapabilities {Map} The desired capabilities for the new
-     * session.
-     * @return {simulator.qxwebdriver.WebDriver} The driver for the newly created session.
-     */
-    createSession : function(executor, desiredCapabilities)
-    {
-      return simulator.qxwebdriver.WebDriver.acquireSession_(executor,
-        new simulator.webdriver.Command(simulator.webdriver.CommandName.NEW_SESSION)
-        .setParameter('desiredCapabilities', desiredCapabilities),
-          'WebDriver.createSession()');
-    },
-
-    /**
-     * Sends a command to the server that is expected to return the details for a
-     * <code>webdriver.Session</code>. This may either be an existing session, or a
-     * newly created one.
-     * @param executor {webdriver.CommandExecutor} Command executor to use when
-     * querying for session details.
-     * @param command {webdriver.Command} The command to send to fetch the session
-     * details.
-     * @param description {String} A descriptive debug label for this action.
-     * @return {simulator.qxwebdriver.WebDriver} A new WebDriver client for the session.
-     */
-    acquireSession_ : function(executor, command, description)
-    {
-      var fn = executor.execute.bind(executor, command);
-      var session = simulator.webdriver.promise.Application.getInstance().schedule(
-        description, function() {
-          return simulator.webdriver.promise.checkedNodeCall(fn).then(function(response) {
-            //bot.response.checkResponse(response);
-            return new simulator.webdriver.Session(response['sessionId'],
-                                         response['value']);
-          });
-        });
-      return new simulator.qxwebdriver.WebDriver(session, executor);
-    }
-  },
-
-  members :
   {
     /**
      * Returns a WebElement representing a qooxdoo widget.
@@ -126,9 +45,27 @@ qx.Class.define("simulator.qxwebdriver.WebDriver",
       var driver = this;
       var app = simulator.webdriver.promise.Application.getInstance();
       return app.schedule("findQxWidget", function() {
-        var element = driver.findElement(locator);
-        return driver.addQxBehavior(element);
+        return driver.findElement(locator)
+        .then(function(element) {
+          return driver.addQxBehavior(element);
+        });
       });
+    },
+
+
+    waitForElementNotPresent : function(locator, timeout)
+    {
+      var condition = function() {
+        return this.findElement(locator)
+        .then(function(el) {
+          return false;
+        },
+        function(error) {
+          return true;
+        });
+      };
+
+      return this.wait(condition, timeout);
     },
 
     /**
@@ -184,6 +121,18 @@ qx.Class.define("simulator.qxwebdriver.WebDriver",
       }, timeout || simulator.qxwebdriver.WebDriver.AUT_LOAD_TIMEOUT);
     },
 
+    waitForQxApplicationTEST : function()
+    {
+      var script = 'var callback = arguments[arguments.length - 1];' +
+        'if (qx.core.Init.getApplication()) {' +
+        '  callback();' +
+        '}' +
+        'else {' +
+        '  window.setTimeout(arguments.callee.bind(this, callback), 250);' +
+        '}';
+      return this.executeAsyncScript(script);
+    },
+
     /**
      * Opens the given URL in the browser, waits until the qooxdoo application
      * to finish loading and initializes the AUT-side helpers.
@@ -200,11 +149,15 @@ qx.Class.define("simulator.qxwebdriver.WebDriver",
 
       var init = function() {
         return this.init()
-        .then(wait.bind(this));
+        .then(function() {
+          return wait.bind(this);
+        });
       };
 
      return this.get(url)
-     .then(init.bind(this));
+     .then(function() {
+        return init.bind(this);
+      });
     },
 
     /**
@@ -251,6 +204,16 @@ qx.Class.define("simulator.qxwebdriver.WebDriver",
       var script = 'return window.qxwebdriver.util["' + name + '"]' +
         '.apply(window, arguments[0])';
       return this.executeScript(script, args);
+    }
+  },
+
+  defer : function(statics)
+  {
+    simulator.webdriver = require("selenium-webdriverjs");
+    for (var prop in statics) {
+      if (typeof statics[prop] == "function") {
+        simulator.webdriver.WebDriver.prototype[prop] = statics[prop];
+      }
     }
   }
 });
