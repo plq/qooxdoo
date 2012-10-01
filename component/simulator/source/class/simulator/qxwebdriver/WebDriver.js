@@ -106,31 +106,15 @@ qx.Class.define("simulator.qxwebdriver.WebDriver", {
     waitForQxApplication : function(timeout)
     {
       var driver = this;
-      return driver.wait(function() {
-        var ready = false;
-        var isQxReady = function() {
-          try {
-            var $qx = qx;
-            return !!$qx.core.Init.getApplication();
-          } catch(ex) {
-            return false;
-          }
-        };
-        ready = driver.executeScript(isQxReady);
+      var ready = false;
+      driver.wait(function() {
+        driver.executeScript('return !!qx.core.Init.getApplication()')
+        .then(function(ret) {
+          ready = ret;
+        });
+        if (ready) console.log("qx ready");
         return ready;
       }, timeout || simulator.qxwebdriver.WebDriver.AUT_LOAD_TIMEOUT);
-    },
-
-    waitForQxApplicationTEST : function()
-    {
-      var script = 'var callback = arguments[arguments.length - 1];' +
-        'if (qx.core.Init.getApplication()) {' +
-        '  callback();' +
-        '}' +
-        'else {' +
-        '  window.setTimeout(arguments.callee.bind(this, callback), 250);' +
-        '}';
-      return this.executeAsyncScript(script);
     },
 
     /**
@@ -143,21 +127,10 @@ qx.Class.define("simulator.qxwebdriver.WebDriver", {
      */
     getQx : function(url, timeout)
     {
-      var wait = function() {
-        return this.waitForQxApplication(timeout);
-      };
-
-      var init = function() {
-        return this.init()
-        .then(function() {
-          return wait.bind(this);
-        });
-      };
-
-     return this.get(url)
-     .then(function() {
-        return init.bind(this);
-      });
+      //var driver = this;
+      this.get(url);
+      this.init();
+      this.waitForQxApplication(timeout);
     },
 
     /**
