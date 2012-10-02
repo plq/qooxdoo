@@ -107,12 +107,11 @@ qx.Class.define("simulator.qxwebdriver.WebDriver", {
     {
       var driver = this;
       var ready = false;
-      driver.wait(function() {
+      return driver.wait(function() {
         driver.executeScript('return !!qx.core.Init.getApplication()')
         .then(function(ret) {
           ready = ret;
         });
-        if (ready) console.log("qx ready");
         return ready;
       }, timeout || simulator.qxwebdriver.WebDriver.AUT_LOAD_TIMEOUT);
     },
@@ -130,7 +129,7 @@ qx.Class.define("simulator.qxwebdriver.WebDriver", {
       //var driver = this;
       this.get(url);
       this.init();
-      this.waitForQxApplication(timeout);
+      return this.waitForQxApplication(timeout);
     },
 
     /**
