@@ -62,8 +62,8 @@
     var category = directory[directory.length-2];
 
     // create the URI to the source script
-    jsFileURL = "../../script/demobrowser.demo." + category + "." + base + ".js";
-    jsSourceURL = "../../script/demobrowser.demo." + category + "." + base + ".src.js";
+    jsFileURL = "../../../demobrowser/source/script/" + DEMO_NS + "." + category + "." + base + ".js";
+    jsSourceURL = "../../../demobrowser/source/script/" + DEMO_NS + "." + category + "." + base + ".src.js";
 
     // Apply document title
     document.title = base + " (" + category + ")";

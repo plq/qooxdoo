@@ -13,15 +13,16 @@
     "default-demo" :
     {
       "let" : {
-        "APPLICATION" : "demobrowser.demo",
-        "QOOXDOO_PATH": "../..",
         "DNAME"       : "${DPACKAGE}.${DSNAME}",
         "DCLASS"      : "${APPLICATION}.${DNAME}",
         "LOCALES"     : ["en", "en_US", "de", "de_DE", "fr", "fr_FR"]
       },
       "library" : [
-        { "manifest" : "${QOOXDOO_PATH}/framework/Manifest.json" },
-        { "manifest" : "Manifest.demo.json" }
+        {
+            "manifest" : "${QOOXDOO_PATH}/framework/Manifest.json"
+           ,"uri": "../../../${QOOXDOO_PATH}/framework"
+        },
+        { "manifest" : "Manifest.json" }
       ],
       "include" : [
         "${DCLASS}",
@@ -50,7 +51,6 @@
       "compile-options" : {
         "paths" : {
           "file"     : "${BUILDTYPE}/script/${DCLASS}.js",
-          "app-root" : "${BUILDTYPE}/demo/yyy"
         },
         "uris" : {
           "script"   : "../../script",

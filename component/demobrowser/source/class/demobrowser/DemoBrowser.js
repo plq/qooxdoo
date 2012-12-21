@@ -1106,7 +1106,7 @@ qx.Class.define("demobrowser.DemoBrowser",
       if (treeNode)
       {
         treeNode.getTree().setSelection([treeNode]);
-        url = 'demo/' + value;
+        url = '../../source/demo/' + value;
         if (qx.core.Environment.get("qx.contrib") == false) {
           url += "?qxenv:qx.theme:" + this.__currentTheme;
         }

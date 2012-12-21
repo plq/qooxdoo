@@ -19,7 +19,7 @@
   "let" :
   {
     "CACHE"        : "${TMPDIR}/qx${QOOXDOO_VERSION}/cache",
-    "QOOXDOO_PATH" : "../..",
+    "QOOXDOO_PATH" : "QOOX_PATH",
     "THEME"        : "demobrowser.Theme"
   },
 
@@ -50,7 +50,7 @@
         },
 
         {
-          "manifest" : "Manifest.json"
+          "manifest" : "${QOOXDOO_PATH}/component/demobrowser/Manifest.json"
         }
       ],
 
@@ -100,8 +100,12 @@
         "code"   :
         {
           "except" : ["*"]
+        },
+        "uris": {
+          "add-nocache-param": false
         }
       },
+
       "compile" : { "type" : "source" }
     },
 
@@ -110,11 +114,16 @@
     {
       "desc"    : "create source version for each demo",
 
-      "let"    : { "APPLICATION" : "demobrowser.demo" },
+      "let"    : { "APPLICATION" : "DEMO_NS" },
 
-      "extend" : ["demos::source"]
+      "extend" : ["demos::source"],
+
+      "compile-options": {
+        "uris": {
+          "add-nocache-param": false
+        }
+      }
     },
-
 
     "source" :
     {
