@@ -51,9 +51,14 @@ sys.path.insert(0, os.path.join(
 
 from misc import json, filetool
 
+TMPL_MANIFEST = 'tmpl.Manifest.json'
+TMPL_CONFIG = 'tmpl.config.json'
+
 fJSON      = "./config.demo.json"
 demoDataFn = "demodata.json"
-demosSourcePath = "./source/class/demobrowser/demo"
+demosSourcePath = None
+demos_dest = None
+namespace = None
 
 ##
 # check whether to include this demo
@@ -62,7 +67,7 @@ def fileCheck(fname):
     fileH = open(fname,"rU")
     selected = False
     for line in fileH:
-        if re.search(r'src="\.\./helper.js"',line):
+        if re.search(r'src=".*?/helper.js"',line):
             selected = True
             break
     fileH.close()
@@ -99,8 +104,7 @@ def getTagsFromJsFile(fname):
 ##
 # generator to create config.demo.json
 
-def CreateDemoJson():
-
+def CreateDemoJson(dest, qxdir):
     source = []
     build  = []
     scategories = {}
@@ -109,12 +113,32 @@ def CreateDemoJson():
     # Pre-processing
     JSON = {}
     # top-level includes
-    default_json = 'tool' + '/' + 'default.json'
+
+    default_json = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])) , 'default.json')
     assert os.path.isfile(default_json)
     JSON['include'] = [{ "path" : "%s" % default_json }]
 
     # per-demo template file
-    json_tmpl = open(os.path.join('tool','tmpl.json'),"rU").read()
+    tmpl_json = os.path.join(os.path.dirname(sys.argv[0]) , 'tmpl.json')
+    tmpl_manifest = os.path.join(os.path.dirname(sys.argv[0]) , TMPL_MANIFEST)
+    tmpl_config = os.path.join(os.path.dirname(sys.argv[0]) , TMPL_CONFIG)
+
+    json_tmpl = open(tmpl_json,"rU").read()
+
+    demo_ns = "%s.demo" % namespace
+
+    manifest_tmpl = json.loads(open(tmpl_manifest, 'rU').read())
+    manifest_tmpl['provides']['namespace'] = demo_ns
+
+    config_tmpl = json.loads(open(tmpl_config, 'rU').read())
+    config_tmpl['let']['QOOXDOO_PATH'] = os.path.join('..', qxdir)
+    config_tmpl['jobs']['source-demos']['let']['APPLICATION'] = demo_ns
+
+    fn = os.path.basename(tmpl_manifest)[len('tmpl.'):] # file name
+    open(os.path.join(dest, '..', '..', fn), 'w').write(json.dumps(manifest_tmpl, indent=2, sort_keys=True))
+
+    fn = os.path.basename(tmpl_config)[len('tmpl.'):]
+    open(os.path.join(dest, '..', '..', fn), 'w').write(json.dumps(config_tmpl, indent=2, sort_keys=True))
 
     # jobs section
     JSON['jobs'] = {}
@@ -170,7 +194,7 @@ def CreateDemoJson():
 
     cont = '// This file is dynamically created by the generator!\n'
     cont += json.dumps(JSON, sort_keys=True, indent=2)
-    filetool.save(fJSON, cont)
+    filetool.save(os.path.join('demobrowser', fJSON), cont)
 
     yield  # final yield to provide for .send(None) of caller
 
@@ -196,7 +220,7 @@ def CopyJsFiles(destdir):
     while True:
         file = (yield)
         if file == None: break
-        clazz = "demobrowser.demo.%s.%s" % demoCategoryFromFile(file)
+        clazz = "%s.demo.%s.%s" % ((namespace,) + demoCategoryFromFile(file))
         shutil.copyfile('source/class/%s.js' % clazz.replace('.','/'), "%s/%s.src.js" % (destdir,clazz))
     yield  # to catch caller's .send(None)
 
@@ -262,13 +286,22 @@ def CreateDemoData(destdir):
 ##
 # Main
 
-def main(dest, scan):
-    dist = os.path.join(dest, demoDataFn)
+def main(base, ns, qxdir):
+    global demos_dest
+    global demosSourcePath
+    global namespace
+
+    namespace = ns
+    demosSourcePath = os.path.join(base, 'class', ns, 'demo')
+    demos_dest = os.path.abspath(os.path.join(base, 'demobrowser'))
+
+    scan = os.path.join(base, 'demo')
+    dest = os.path.join('demobrowser', 'source', 'script')
 
     # Init the various consumers that work on every demo
     dataCreator   = CreateDemoData(dest) # generator for the demodata.js file
     dataCreator.send(None)               # init it
-    configCreator = CreateDemoJson()     # generator for the config.demo.json file
+    configCreator = CreateDemoJson(dest, qxdir) # generator for the config.demo.json file
     configCreator.send(None)
     jsFileCopier  = CopyJsFiles(dest)    # generator to copy demos' source JS to script dir
     jsFileCopier.send(None)
@@ -313,7 +346,8 @@ if __name__ == '__main__':
 
       (options, args) = parser.parse_args()
 
-      main(args[0], args[1])
+      print os.path.abspath(args[2])
+      main(args[0], args[1], args[2])
 
     except KeyboardInterrupt:
       print
