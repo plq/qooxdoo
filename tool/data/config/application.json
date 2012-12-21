@@ -137,6 +137,54 @@
     },
 
 
+
+
+
+
+    "demobrowser-source-data" : {
+      "desc"    : "creates a Json index of all demos (demodata.js), for Demobrowser's navigation pane",
+      "extend" : ["common"],
+      "shell" : {
+        "command" : "${PYTHON_CMD} ${QOOXDOO_PATH}/component/demobrowser/tool/gendata.py ./source ${APPLICATION} ${QOOXDOO_PATH}"
+      }
+    },
+
+    "demobrowser-source-demobrowser" : {
+      "extend" : ["common"],
+
+      "shell" : {
+        "command" : "${PYTHON_CMD} ${QOOXDOO_PATH}/tool/bin/generator.py ${GENERATOR_OPTS} -c demobrowser/config.json source"
+      }
+    },
+
+    "demobrowser-source-files" : {
+      "extend" : ["common"],
+
+      "shell" : {
+        "command" : [
+          "mkdir -p demobrowser/source/script",
+          "rsync ${QOOXDOO_PATH}/component/demobrowser/source/index.html demobrowser/source"
+        ]
+      }
+    },
+
+    "demobrowser-source" : {
+      "desc"    : "create source version of Demobrowser",
+      "run" : [
+        "demobrowser-source-files",
+        "demobrowser-source-data",
+        "demobrowser-source-demobrowser"
+      ]
+    },
+
+
+
+
+
+
+
+
+
     "test" :
     {
       "desc"    : "create a test runner app for unit tests of the current library",
