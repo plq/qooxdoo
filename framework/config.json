@@ -18,6 +18,7 @@
     //"build-all",
     "dependencies",
     "clean",
+    "demobrowser-source",
     "distclean",
     "fix",
     "images",
